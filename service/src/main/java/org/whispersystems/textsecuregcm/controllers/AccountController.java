@@ -35,6 +35,7 @@ import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.Response.Status;
 import java.util.Base64;
+import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
@@ -50,6 +51,8 @@ import org.whispersystems.textsecuregcm.entities.AccountIdentityResponse;
 import org.whispersystems.textsecuregcm.entities.ApnRegistrationId;
 import org.whispersystems.textsecuregcm.entities.ConfirmUsernameHashRequest;
 import org.whispersystems.textsecuregcm.entities.DeviceName;
+import org.whispersystems.textsecuregcm.entities.DirectoryEntry;
+import org.whispersystems.textsecuregcm.entities.DirectoryResponse;
 import org.whispersystems.textsecuregcm.entities.EncryptedUsername;
 import org.whispersystems.textsecuregcm.entities.GcmRegistrationId;
 import org.whispersystems.textsecuregcm.entities.RegistrationLock;
@@ -72,6 +75,7 @@ import org.whispersystems.textsecuregcm.storage.UsernameReservationNotFoundExcep
 import org.whispersystems.textsecuregcm.util.HeaderUtils;
 import org.whispersystems.textsecuregcm.util.UsernameHashZkProofVerifier;
 import org.whispersystems.textsecuregcm.util.Util;
+import reactor.core.scheduler.Schedulers;
 
 @SuppressWarnings("OptionalUsedAsFieldOrParameterType")
 @Path("/v1/accounts")
@@ -517,6 +521,28 @@ public class AccountController {
   @Path("/me")
   public void deleteAccount(@Auth AuthenticatedDevice auth) {
     accounts.delete(auth.accountIdentifier(), AccountsManager.DeletionReason.USER_REQUEST);
+  }
+
+  @GET
+  @Path("/directory")
+  @Produces(MediaType.APPLICATION_JSON)
+  @Operation(
+      summary = "List all registered accounts on this private deployment",
+      description = """
+          Authenticated endpoint for private/self-hosted deployments. Returns the ACI and display name of every
+          registered account so clients can pick recipients without phone-number-based contact discovery. This
+          endpoint scans the entire accounts table and is intended only for small closed deployments.
+          """
+  )
+  @ApiResponse(responseCode = "200", description = "Directory returned successfully.", useReturnTypeSchema = true)
+  @ApiResponse(responseCode = "401", description = "Account authentication check failed.")
+  public DirectoryResponse listDirectory(@Auth final AuthenticatedDevice auth) {
+    final List<DirectoryEntry> entries = accounts.streamAllFromDynamo(1, Schedulers.parallel())
+        .map(account -> new DirectoryEntry(account.getUuid(), account.getDisplayName()))
+        .collectList()
+        .block();
+
+    return new DirectoryResponse(entries);
   }
 
   private void clearUsernameLink(final UUID accountIdentifier) {

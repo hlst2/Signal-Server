@@ -43,6 +43,7 @@ import org.whispersystems.textsecuregcm.auth.RegistrationLockVerificationManager
 import org.whispersystems.textsecuregcm.entities.AccountCreationResponse;
 import org.whispersystems.textsecuregcm.entities.AccountIdentityResponse;
 import org.whispersystems.textsecuregcm.entities.PhoneVerificationRequest;
+import org.whispersystems.textsecuregcm.entities.PrivateRegistrationRequest;
 import org.whispersystems.textsecuregcm.entities.RegistrationLockFailure;
 import org.whispersystems.textsecuregcm.entities.RegistrationRequest;
 import org.whispersystems.textsecuregcm.limits.RateLimiters;
@@ -53,6 +54,7 @@ import org.whispersystems.textsecuregcm.storage.AccountsManager;
 import org.whispersystems.textsecuregcm.storage.DeviceCapability;
 import org.whispersystems.textsecuregcm.storage.DeviceSpec;
 import org.whispersystems.textsecuregcm.util.HeaderUtils;
+import org.whispersystems.textsecuregcm.util.SyntheticE164;
 import org.whispersystems.textsecuregcm.util.Util;
 
 @Path("/v1/registration")
@@ -204,6 +206,84 @@ public class RegistrationController {
 
     final AccountIdentityResponse identityResponse = new AccountIdentityResponseBuilder(account)
         // If there was an existing account, return whether it could have had something in the storage service
+        .storageCapable(existingAccount
+            .map(a -> a.hasCapability(DeviceCapability.STORAGE))
+            .orElse(false))
+        .build();
+
+    return new AccountCreationResponse(identityResponse, existingAccount.isPresent());
+  }
+
+  @POST
+  @Path("/private")
+  @Consumes(MediaType.APPLICATION_JSON)
+  @Produces(MediaType.APPLICATION_JSON)
+  @Operation(summary = "Registers an account on a private deployment without phone-number verification",
+      description = """
+          For private/self-hosted deployments where access is gated by network controls (e.g., WireGuard).
+          The client supplies a public display name and key material; the server derives a stable internal
+          identifier from the display name and creates the account. Re-registering with the same display name
+          rotates the keys for the existing account, identical to phone-number re-registration.
+          """)
+  @ApiResponse(responseCode = "200", description = "Account creation succeeded", useReturnTypeSchema = true)
+  @ApiResponse(responseCode = "422", description = "The request did not pass validation")
+  @ApiResponse(responseCode = "499", description = "Client must support post-quantum ratchet")
+  public AccountCreationResponse registerPrivate(
+      @HeaderParam(HttpHeaders.AUTHORIZATION) @NotNull final BasicAuthorizationHeader authorizationHeader,
+      @HeaderParam(HeaderUtils.X_SIGNAL_AGENT) final String signalAgent,
+      @HeaderParam(HttpHeaders.USER_AGENT) final String userAgent,
+      @NotNull @Valid final PrivateRegistrationRequest registrationRequest) throws InterruptedException {
+
+    final String password = authorizationHeader.getPassword();
+    final String displayName = registrationRequest.displayName().trim();
+
+    if (displayName.isEmpty()) {
+      throw new WebApplicationException("displayName must not be blank", 422);
+    }
+
+    if (!registrationRequest.isEverySignedKeyValid(userAgent)) {
+      throw new WebApplicationException("Invalid signature", 422);
+    }
+
+    if (!(registrationRequest.accountAttributes().getCapabilities() != null
+        ? registrationRequest.accountAttributes().getCapabilities()
+        : Collections.<DeviceCapability>emptySet()).containsAll(DeviceCapability.CAPABILITIES_REQUIRED_FOR_NEW_DEVICES)) {
+
+      throw new WebApplicationException("Missing required device capability", 499);
+    }
+
+    final String syntheticNumber = SyntheticE164.forName(displayName);
+
+    final Optional<Account> existingAccount = accounts.getByE164(syntheticNumber);
+
+    final Account account = accounts.create(syntheticNumber,
+        registrationRequest.accountAttributes(),
+        existingAccount.map(Account::getBadges).orElseGet(ArrayList::new),
+        registrationRequest.aciIdentityKey(),
+        registrationRequest.pniIdentityKey(),
+        new DeviceSpec(
+            registrationRequest.accountAttributes().getName(),
+            password,
+            signalAgent,
+            registrationRequest.accountAttributes().getCapabilities(),
+            registrationRequest.accountAttributes().getRegistrationId(),
+            registrationRequest.accountAttributes().getPhoneNumberIdentityRegistrationId(),
+            registrationRequest.accountAttributes().getFetchesMessages(),
+            registrationRequest.deviceActivationRequest().apnToken(),
+            registrationRequest.deviceActivationRequest().gcmToken(),
+            registrationRequest.deviceActivationRequest().aciSignedPreKey(),
+            registrationRequest.deviceActivationRequest().pniSignedPreKey(),
+            registrationRequest.deviceActivationRequest().aciPqLastResortPreKey(),
+            registrationRequest.deviceActivationRequest().pniPqLastResortPreKey()),
+        userAgent);
+
+    final Account updatedAccount = accounts.update(account, a -> a.setDisplayName(displayName));
+
+    Metrics.counter(ACCOUNT_CREATED_COUNTER_NAME, Tags.of(UserAgentTagUtil.getPlatformTag(userAgent),
+            Tag.of(VERIFICATION_TYPE_TAG_NAME, "private")))
+        .increment();
+
+    final AccountIdentityResponse identityResponse = new AccountIdentityResponseBuilder(updatedAccount)
         .storageCapable(existingAccount
             .map(a -> a.hasCapability(DeviceCapability.STORAGE))
             .orElse(false))

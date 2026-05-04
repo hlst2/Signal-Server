@@ -123,6 +123,10 @@ public class Account {
   @JsonProperty("holds")
   private List<UsernameHold> usernameHolds = Collections.emptyList();
 
+  @JsonProperty("dn")
+  @Nullable
+  private String displayName;
+
   @JsonIgnore
   private boolean stale;
 
@@ -541,6 +545,17 @@ public class Account {
   public void setUsernameHolds(final List<UsernameHold> usernameHolds) {
     this.requireNotStale();
     this.usernameHolds = usernameHolds;
+  }
+
+  @Nullable
+  public String getDisplayName() {
+    requireNotStale();
+    return displayName;
+  }
+
+  public void setDisplayName(@Nullable final String displayName) {
+    requireNotStale();
+    this.displayName = displayName;
   }
 
   @Nullable
