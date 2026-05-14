@@ -79,7 +79,6 @@
     <!-- Must be less than or equal to the value from Google libraries-bom which controls the protobuf runtime version.
     See https://protobuf.dev/support/cross-version-runtime-guarantee/. -->
     <protoc.version>4.33.2</protoc.version>
-    <pushy.version>0.15.4</pushy.version>
     <reactor-bom.version>2025.0.4</reactor-bom.version> <!-- 3.8.4, see https://github.com/reactor/reactor#bom-versioning-scheme -->
     <resilience4j.version>2.4.0</resilience4j.version>
     <semver4j.version>3.1.0</semver4j.version>
@@ -189,16 +188,6 @@
         <version>${kotlin.version}</version>
         <type>pom</type>
         <scope>import</scope>
-      </dependency>
-      <dependency>
-        <groupId>com.eatthepath</groupId>
-        <artifactId>pushy</artifactId>
-        <version>${pushy.version}</version>
-      </dependency>
-      <dependency>
-        <groupId>com.eatthepath</groupId>
-        <artifactId>pushy-dropwizard-metrics-listener</artifactId>
-        <version>${pushy.version}</version>
       </dependency>
       <dependency>
         <groupId>com.googlecode.libphonenumber</groupId>

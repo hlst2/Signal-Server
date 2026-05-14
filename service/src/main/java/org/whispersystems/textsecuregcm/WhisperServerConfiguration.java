@@ -12,7 +12,6 @@ import java.time.Duration;
 import java.util.Collections;
 import java.util.Map;
 import org.whispersystems.textsecuregcm.attachments.TusConfiguration;
-import org.whispersystems.textsecuregcm.configuration.ApnConfiguration;
 import org.whispersystems.textsecuregcm.configuration.AttachmentsConfiguration;
 import org.whispersystems.textsecuregcm.configuration.AwsCredentialsProviderFactory;
 import org.whispersystems.textsecuregcm.configuration.BadgesConfiguration;
@@ -28,7 +27,6 @@ import org.whispersystems.textsecuregcm.configuration.DynamoDbTables;
 import org.whispersystems.textsecuregcm.configuration.ExternalRequestFilterConfiguration;
 import org.whispersystems.textsecuregcm.configuration.FaultTolerantRedisClientFactory;
 import org.whispersystems.textsecuregcm.configuration.FaultTolerantRedisClusterFactory;
-import org.whispersystems.textsecuregcm.configuration.FcmConfiguration;
 import org.whispersystems.textsecuregcm.configuration.GcpAttachmentsConfiguration;
 import org.whispersystems.textsecuregcm.configuration.GenericZkConfig;
 import org.whispersystems.textsecuregcm.configuration.GrpcConfiguration;
@@ -148,16 +146,6 @@ public class WhisperServerConfiguration extends Configuration {
   @NotNull
   @JsonProperty
   private WebSocketConfiguration webSocket = new WebSocketConfiguration();
-
-  @Valid
-  @NotNull
-  @JsonProperty
-  private FcmConfiguration fcm;
-
-  @Valid
-  @NotNull
-  @JsonProperty
-  private ApnConfiguration apn;
 
   @Valid
   @NotNull
@@ -367,14 +355,6 @@ public class WhisperServerConfiguration extends Configuration {
 
   public FaultTolerantRedisClusterFactory getRateLimitersCluster() {
     return rateLimitersCluster;
-  }
-
-  public FcmConfiguration getFcmConfiguration() {
-    return fcm;
-  }
-
-  public ApnConfiguration getApnConfiguration() {
-    return apn;
   }
 
   public CdnConfiguration getCdnConfiguration() {

@@ -172,16 +172,6 @@ tus:
   uploadUri: https://example.org/upload
   userAuthenticationTokenSharedSecret: secret://tus.userAuthenticationTokenSharedSecret
 
-apn: # Apple Push Notifications configuration
-  sandbox: true
-  bundleId: com.example.textsecuregcm
-  keyId: secret://apn.keyId
-  teamId: secret://apn.teamId
-  signingKey: secret://apn.signingKey
-
-fcm: # FCM configuration
-  credentials: secret://fcm.credentials
-
 cdn:
   bucket: cdn        # S3 Bucket name
   credentials:

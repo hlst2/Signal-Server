@@ -13,7 +13,6 @@
   <properties>
     <commons-compress.version>1.28.0</commons-compress.version>
     <dynamodb-lock-client.version>1.4.0</dynamodb-lock-client.version>
-    <firebase-admin.version>9.7.0</firebase-admin.version>
     <libphonenumber-geocoder.version>3.23</libphonenumber-geocoder.version>
     <java-jwt.version>4.5.0</java-jwt.version>
     <java-uuid-generator.version>5.2.0</java-uuid-generator.version>
@@ -248,12 +247,6 @@
     </dependency>
 
     <dependency>
-      <groupId>com.google.firebase</groupId>
-      <artifactId>firebase-admin</artifactId>
-      <version>${firebase-admin.version}</version>
-    </dependency>
-
-    <dependency>
       <groupId>com.google.cloud</groupId>
       <artifactId>google-cloud-firestore</artifactId>
       <exclusions>
@@ -369,15 +362,6 @@
     <dependency>
       <groupId>io.lettuce</groupId>
       <artifactId>lettuce-core</artifactId>
-    </dependency>
-
-    <dependency>
-      <groupId>com.eatthepath</groupId>
-      <artifactId>pushy</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>com.eatthepath</groupId>
-      <artifactId>pushy-dropwizard-metrics-listener</artifactId>
     </dependency>
 
     <dependency>

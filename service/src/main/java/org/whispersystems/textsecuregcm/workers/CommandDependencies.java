@@ -150,10 +150,6 @@ public record CommandDependencies(
 
         .minThreads(0).maxThreads(Integer.MAX_VALUE).workQueue(new SynchronousQueue<>())
         .keepAliveTime(io.dropwizard.util.Duration.seconds(60L)).build();
-    ExecutorService apnSenderExecutor = ExecutorServiceBuilder.of(environment, "apnSender")
-        .maxThreads(1).minThreads(1).build();
-    ExecutorService fcmSenderExecutor = ExecutorServiceBuilder.of(environment, "fcmSender")
-        .maxThreads(16).minThreads(16).build();
     ExecutorService clientEventExecutor = ManagedExecutors.newVirtualThreadPerTaskExecutor(
       "clientEvent", configuration.getVirtualThreadConfiguration().maxConcurrentThreadsPerExecutor(), environment);
     ExecutorService asyncOperationQueueingExecutor = ExecutorServiceBuilder.of(environment, "asyncOperationQueueing")
@@ -301,8 +297,8 @@ public record CommandDependencies(
         clock,
         dynamicConfigurationManager);
 
-    APNSender apnSender = new APNSender(apnSenderExecutor, configuration.getApnConfiguration());
-    FcmSender fcmSender = new FcmSender(fcmSenderExecutor, configuration.getFcmConfiguration().credentials().value());
+    APNSender apnSender = new APNSender();
+    FcmSender fcmSender = new FcmSender();
     PushNotificationScheduler pushNotificationScheduler = new PushNotificationScheduler(pushSchedulerCluster,
         apnSender, fcmSender, accountsManager, 0, 0, retryExecutor);
     PushNotificationManager pushNotificationManager = new PushNotificationManager(accountsManager,

@@ -503,17 +503,11 @@ public class WhisperServerService extends Application<WhisperServerConfiguration
 
     final BlockingQueue<Runnable> receiptSenderQueue = new LinkedBlockingQueue<>();
     Metrics.gaugeCollectionSize(name(getClass(), "receiptSenderQueue"), Collections.emptyList(), receiptSenderQueue);
-    final BlockingQueue<Runnable> fcmSenderQueue = new LinkedBlockingQueue<>();
-    Metrics.gaugeCollectionSize(name(getClass(), "fcmSenderQueue"), Collections.emptyList(), fcmSenderQueue);
     final BlockingQueue<Runnable> messageDeliveryQueue = new LinkedBlockingQueue<>();
     Metrics.gaugeCollectionSize(MetricsUtil.name(getClass(), "messageDeliveryQueue"), Collections.emptyList(),
         messageDeliveryQueue);
 
     ScheduledExecutorService recurringJobExecutor = ScheduledExecutorServiceBuilder.of(environment, "recurringJob").threads(6).build();
-    ExecutorService apnSenderExecutor = ExecutorServiceBuilder.of(environment, "apnSender")
-        .maxThreads(1).minThreads(1).build();
-    ExecutorService fcmSenderExecutor = ExecutorServiceBuilder.of(environment, "fcmSender")
-        .maxThreads(32).minThreads(32).workQueue(fcmSenderQueue).build();
     ExecutorService secureValueRecoveryServiceExecutor = ExecutorServiceBuilder.of(environment, "secureValueRecoveryService")
         .maxThreads(1).minThreads(1).build();
     ExecutorService storageServiceExecutor = ExecutorServiceBuilder.of(environment, "storageService")
@@ -674,8 +668,8 @@ public class WhisperServerService extends Application<WhisperServerConfiguration
         registrationRecoveryPasswordsManager, accountLockExecutor, messagePollExecutor,
         retryExecutor, clock, config.getLinkDeviceSecretConfiguration().secret().value());
     RemoteConfigsManager remoteConfigsManager = new RemoteConfigsManager(remoteConfigs);
-    APNSender apnSender = new APNSender(apnSenderExecutor, config.getApnConfiguration());
-    FcmSender fcmSender = new FcmSender(fcmSenderExecutor, config.getFcmConfiguration().credentials().value());
+    APNSender apnSender = new APNSender();
+    FcmSender fcmSender = new FcmSender();
     PushNotificationScheduler pushNotificationScheduler = new PushNotificationScheduler(pushSchedulerCluster,
         apnSender, fcmSender, accountsManager, 0, 0, retryExecutor);
     PushNotificationManager pushNotificationManager =
