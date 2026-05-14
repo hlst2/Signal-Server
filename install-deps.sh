@@ -196,14 +196,16 @@ install_foundationdb_client() {
   local tmp_deb="/tmp/foundationdb-clients_${FDB_VERSION}-1_amd64.deb"
 
   if dpkg -s foundationdb-clients >/dev/null 2>&1; then
-    local installed
+    local installed installed_upstream
     installed="$(dpkg-query -W -f='${Version}' foundationdb-clients 2>/dev/null || true)"
-    if [[ "$installed" == "${FDB_VERSION}-1" ]]; then
-      log "foundationdb-clients ${FDB_VERSION} already installed — skipping."
+    # Strip any Debian revision suffix ("-1", "-2", ...) so "7.3.62" and
+    # "7.3.62-1" both compare equal to FDB_VERSION.
+    installed_upstream="${installed%%-*}"
+    if [[ "$installed_upstream" == "$FDB_VERSION" ]]; then
+      log "foundationdb-clients $installed already installed — skipping."
       return
-    else
-      warn "Found foundationdb-clients $installed, replacing with ${FDB_VERSION}."
     fi
+    warn "Found foundationdb-clients $installed, replacing with ${FDB_VERSION}."
   fi
 
   log "Downloading FoundationDB client ${FDB_VERSION}..."
