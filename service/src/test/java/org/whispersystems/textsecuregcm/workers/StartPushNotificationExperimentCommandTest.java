@@ -71,10 +71,6 @@ class StartPushNotificationExperimentCommandTest {
           null,
           null,
           null,
-          null,
-          null,
-          null,
-          null,
           null);
     }
 
