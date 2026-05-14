@@ -34,10 +34,6 @@ public class DynamicConfiguration {
 
   @JsonProperty
   @Valid
-  private DynamicPaymentsConfiguration payments = new DynamicPaymentsConfiguration();
-
-  @JsonProperty
-  @Valid
   private DynamicCaptchaConfiguration captcha = new DynamicCaptchaConfiguration();
 
   @JsonProperty
@@ -100,10 +96,6 @@ public class DynamicConfiguration {
 
   public DynamicRemoteDeprecationConfiguration getRemoteDeprecationConfiguration() {
     return remoteDeprecation;
-  }
-
-  public DynamicPaymentsConfiguration getPaymentsConfiguration() {
-    return payments;
   }
 
   public DynamicCaptchaConfiguration getCaptchaConfiguration() {

@@ -46,7 +46,6 @@
 
   <properties>
     <aws.sdk2.version>2.42.27</aws.sdk2.version>
-    <braintree.version>3.48.0</braintree.version>
     <commons-csv.version>1.14.1</commons-csv.version>
     <commons-io.version>2.21.0</commons-io.version>
     <dropwizard.version>4.0.16</dropwizard.version>
@@ -86,7 +85,6 @@
     <semver4j.version>3.1.0</semver4j.version>
     <simple-grpc.version>0.2.0</simple-grpc.version>
     <slf4j.version>2.0.17</slf4j.version>
-    <stripe.version>31.2.0</stripe.version>
     <swagger.version>2.2.46</swagger.version>
     <testcontainers.version>2.0.4</testcontainers.version>
 
@@ -258,16 +256,6 @@
         <artifactId>asm</artifactId>
         <version>9.9.1</version>
         <scope>test</scope>
-      </dependency>
-      <dependency>
-        <groupId>com.stripe</groupId>
-        <artifactId>stripe-java</artifactId>
-        <version>${stripe.version}</version>
-      </dependency>
-      <dependency>
-        <groupId>com.braintreepayments.gateway</groupId>
-        <artifactId>braintree-java</artifactId>
-        <version>${braintree.version}</version>
       </dependency>
       <dependency>
         <groupId>com.google.code.findbugs</groupId>

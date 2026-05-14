@@ -17,7 +17,7 @@ import org.signal.chat.credentials.ExternalServiceType;
 import org.whispersystems.textsecuregcm.WhisperServerConfiguration;
 import org.whispersystems.textsecuregcm.auth.ExternalServiceCredentialsGenerator;
 import org.whispersystems.textsecuregcm.configuration.DirectoryV2ClientConfiguration;
-import org.whispersystems.textsecuregcm.configuration.PaymentsServiceConfiguration;
+import org.whispersystems.textsecuregcm.configuration.SecureStorageServiceConfiguration;
 import org.whispersystems.textsecuregcm.configuration.SecureValueRecoveryConfiguration;
 
 enum ExternalServiceDefinitions {
@@ -28,13 +28,6 @@ enum ExternalServiceDefinitions {
         .withUserDerivationKey(cfg.userIdTokenSharedSecret())
         .prependUsername(false)
         .withClock(clock)
-        .build();
-  }),
-  PAYMENTS(ExternalServiceType.EXTERNAL_SERVICE_TYPE_PAYMENTS, (chatConfig, clock) -> {
-    final PaymentsServiceConfiguration cfg = chatConfig.getPaymentsServiceConfiguration();
-    return ExternalServiceCredentialsGenerator
-        .builder(cfg.userAuthenticationTokenSharedSecret())
-        .prependUsername(true)
         .build();
   }),
   SVR(ExternalServiceType.EXTERNAL_SERVICE_TYPE_SVR, (chatConfig, clock) -> {
@@ -48,7 +41,7 @@ enum ExternalServiceDefinitions {
         .build();
   }),
   STORAGE(ExternalServiceType.EXTERNAL_SERVICE_TYPE_STORAGE, (chatConfig, clock) -> {
-    final PaymentsServiceConfiguration cfg = chatConfig.getPaymentsServiceConfiguration();
+    final SecureStorageServiceConfiguration cfg = chatConfig.getSecureStorageServiceConfiguration();
     return ExternalServiceCredentialsGenerator
         .builder(cfg.userAuthenticationTokenSharedSecret())
         .prependUsername(true)

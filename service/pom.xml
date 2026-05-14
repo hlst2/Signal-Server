@@ -11,18 +11,14 @@
   <artifactId>service</artifactId>
 
   <properties>
-    <apollo-api-jvm.version>3.8.5</apollo-api-jvm.version>
     <commons-compress.version>1.28.0</commons-compress.version>
     <dynamodb-lock-client.version>1.4.0</dynamodb-lock-client.version>
     <firebase-admin.version>9.7.0</firebase-admin.version>
     <libphonenumber-geocoder.version>3.23</libphonenumber-geocoder.version>
-    <google-androidpublisher.version>v3-rev20250904-2.0.0</google-androidpublisher.version>
     <java-jwt.version>4.5.0</java-jwt.version>
     <java-uuid-generator.version>5.2.0</java-uuid-generator.version>
     <!-- *all* opentelemetry-logback-appender versions are "alpha" despite the advanced version number -->
     <opentelemetry-logback-appender-1.0.version>2.22.0-alpha</opentelemetry-logback-appender-1.0.version>
-    <storekit.version>4.0.0</storekit.version>
-    <webauthn4j.version>0.30.2.RELEASE</webauthn4j.version>
   </properties>
 
   <dependencies>
@@ -30,28 +26,6 @@
       <groupId>com.auth0</groupId>
       <artifactId>java-jwt</artifactId>
       <version>${java-jwt.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>com.google.apis</groupId>
-      <artifactId>google-api-services-androidpublisher</artifactId>
-      <version>${google-androidpublisher.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>com.apple.itunes.storekit</groupId>
-      <artifactId>app-store-server-library</artifactId>
-      <version>${storekit.version}</version>
-      <exclusions>
-        <!-- conflicts with other users; resolved manually with explicit import -->
-        <exclusion>
-          <groupId>com.squareup.okio</groupId>
-          <artifactId>okio-jvm</artifactId>
-        </exclusion>
-      </exclusions>
-    </dependency>
-    <dependency>
-      <groupId>com.webauthn4j</groupId>
-      <artifactId>webauthn4j-appattest</artifactId>
-      <version>${webauthn4j.version}</version>
     </dependency>
     <dependency>
       <groupId>io.swagger.core.v3</groupId>
@@ -523,34 +497,6 @@
       <artifactId>google-auth-library-oauth2-http</artifactId>
     </dependency>
 
-    <dependency>
-      <groupId>com.stripe</groupId>
-      <artifactId>stripe-java</artifactId>
-    </dependency>
-
-    <dependency>
-      <groupId>com.braintreepayments.gateway</groupId>
-      <artifactId>braintree-java</artifactId>
-    </dependency>
-
-    <dependency>
-      <groupId>com.apollographql.apollo3</groupId>
-      <artifactId>apollo-api-jvm</artifactId>
-      <version>${apollo-api-jvm.version}</version>
-
-      <exclusions>
-        <exclusion>
-          <groupId>org.jetbrains</groupId>
-          <artifactId>annotations</artifactId>
-        </exclusion>
-        <!-- conflicts with other users; resolved manually with explicit import -->
-        <exclusion>
-          <groupId>com.squareup.okio</groupId>
-          <artifactId>okio-jvm</artifactId>
-        </exclusion>
-      </exclusions>
-    </dependency>
-
     <!-- to resolve conflicting imports from other dependencies -->
     <dependency>
       <groupId>com.squareup.okio</groupId>
@@ -823,33 +769,6 @@
               <arguments>
                 <argument>${project.basedir}/config</argument>
               </arguments>
-            </configuration>
-          </execution>
-        </executions>
-      </plugin>
-
-      <plugin>
-        <groupId>com.github.aoudiamoncef</groupId>
-        <artifactId>apollo-client-maven-plugin</artifactId>
-        <version>7.1.0</version>
-        <executions>
-          <execution>
-            <goals>
-              <goal>generate</goal>
-            </goals>
-            <configuration>
-              <services>
-                <braintree>
-                  <compilationUnit>
-                    <name>braintree</name>
-                    <compilerParams>
-                      <schemaPackageName>com.braintree.graphql.client</schemaPackageName>
-                      <!-- override the default in 7.1.0, see https://github.com/aoudiamoncef/apollo-client-maven-plugin/issues/84 -->
-                      <operationManifestFormat>none</operationManifestFormat>
-                    </compilerParams>
-                  </compilationUnit>
-                </braintree>
-              </services>
             </configuration>
           </execution>
         </executions>

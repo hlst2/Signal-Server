@@ -10,7 +10,6 @@ import java.util.List;
 import org.whispersystems.textsecuregcm.backup.BackupsDb;
 import org.whispersystems.textsecuregcm.experiment.PushNotificationExperimentSamples;
 import org.whispersystems.textsecuregcm.scheduler.JobScheduler;
-import org.whispersystems.textsecuregcm.storage.devicecheck.AppleDeviceChecks;
 import software.amazon.awssdk.services.dynamodb.model.AttributeDefinition;
 import software.amazon.awssdk.services.dynamodb.model.GlobalSecondaryIndex;
 import software.amazon.awssdk.services.dynamodb.model.KeySchemaElement;
@@ -218,30 +217,12 @@ public final class DynamoDbExtensionSchema {
             .build()),
         List.of(), List.of()),
 
-    ISSUED_RECEIPTS("issued_receipts_test",
-        IssuedReceiptsManager.KEY_PROCESSOR_ITEM_ID,
-        null,
-        List.of(AttributeDefinition.builder()
-            .attributeName(IssuedReceiptsManager.KEY_PROCESSOR_ITEM_ID)
-            .attributeType(ScalarAttributeType.S)
-            .build()),
-        List.of(), List.of()),
-
     MESSAGES("messages_test",
         MessagesDynamoDb.KEY_PARTITION,
         MessagesDynamoDb.KEY_SORT,
         List.of(
             AttributeDefinition.builder().attributeName(MessagesDynamoDb.KEY_PARTITION).attributeType(ScalarAttributeType.B).build(),
             AttributeDefinition.builder().attributeName(MessagesDynamoDb.KEY_SORT).attributeType(ScalarAttributeType.B).build()),
-        List.of(), List.of()),
-
-    ONETIME_DONATIONS("onetime_donations_test",
-        OneTimeDonationsManager.KEY_PAYMENT_ID,
-        null,
-        List.of(AttributeDefinition.builder()
-            .attributeName(OneTimeDonationsManager.KEY_PAYMENT_ID)
-            .attributeType(ScalarAttributeType.S)
-            .build()),
         List.of(), List.of()),
 
     PROFILES("profiles_test",
@@ -332,34 +313,6 @@ public final class DynamoDbExtensionSchema {
         List.of(),
         List.of()),
 
-    SUBSCRIPTIONS("subscriptions_test",
-        Subscriptions.KEY_USER,
-        null,
-        List.of(
-            AttributeDefinition.builder()
-                .attributeName(Subscriptions.KEY_USER)
-                .attributeType(ScalarAttributeType.B)
-                .build(),
-            AttributeDefinition.builder()
-                .attributeName(Subscriptions.KEY_PROCESSOR_ID_CUSTOMER_ID)
-                .attributeType(ScalarAttributeType.B)
-                .build()),
-        List.of(GlobalSecondaryIndex.builder()
-            .indexName(Subscriptions.INDEX_NAME)
-            .keySchema(KeySchemaElement.builder()
-                .attributeName(Subscriptions.KEY_PROCESSOR_ID_CUSTOMER_ID)
-                .keyType(KeyType.HASH)
-                .build())
-            .projection(Projection.builder()
-                .projectionType(ProjectionType.KEYS_ONLY)
-                .build())
-            .provisionedThroughput(ProvisionedThroughput.builder()
-                .readCapacityUnits(20L)
-                .writeCapacityUnits(20L)
-                .build())
-            .build()),
-        List.of()),
-
     USED_LINK_DEVICE_TOKENS("used_link_device_tokens_test",
         Accounts.KEY_LINK_DEVICE_TOKEN_HASH,
         null,
@@ -385,28 +338,6 @@ public final class DynamoDbExtensionSchema {
         List.of(AttributeDefinition.builder()
             .attributeName(VerificationSessions.KEY_KEY)
             .attributeType(ScalarAttributeType.S)
-            .build()),
-        List.of(), List.of()),
-
-    APPLE_DEVICE_CHECKS("apple_device_check",
-        AppleDeviceChecks.KEY_ACCOUNT_UUID,
-        AppleDeviceChecks.KEY_PUBLIC_KEY_ID,
-        List.of(AttributeDefinition.builder()
-                .attributeName(AppleDeviceChecks.KEY_ACCOUNT_UUID)
-                .attributeType(ScalarAttributeType.B)
-                .build(),
-            AttributeDefinition.builder()
-                .attributeName(AppleDeviceChecks.KEY_PUBLIC_KEY_ID)
-                .attributeType(ScalarAttributeType.B)
-                .build()),
-        List.of(), List.of()),
-
-    APPLE_DEVICE_CHECKS_KEY_CONSTRAINT("apple_device_check_key_constraint",
-        AppleDeviceChecks.KEY_PUBLIC_KEY,
-        null,
-        List.of(AttributeDefinition.builder()
-            .attributeName(AppleDeviceChecks.KEY_PUBLIC_KEY)
-            .attributeType(ScalarAttributeType.B)
             .build()),
         List.of(), List.of());
 

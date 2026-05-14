@@ -85,7 +85,6 @@ import org.whispersystems.textsecuregcm.badges.ProfileBadgeConverter;
 import org.whispersystems.textsecuregcm.configuration.BadgeConfiguration;
 import org.whispersystems.textsecuregcm.configuration.BadgesConfiguration;
 import org.whispersystems.textsecuregcm.configuration.dynamic.DynamicConfiguration;
-import org.whispersystems.textsecuregcm.configuration.dynamic.DynamicPaymentsConfiguration;
 import org.whispersystems.textsecuregcm.controllers.RateLimitExceededException;
 import org.whispersystems.textsecuregcm.entities.Badge;
 import org.whispersystems.textsecuregcm.entities.BadgeSvg;
@@ -128,9 +127,6 @@ public class ProfileGrpcServiceTest extends SimpleBaseGrpcTest<ProfileGrpcServic
 
   @Mock
   private ProfilesManager profilesManager;
-
-  @Mock
-  private DynamicPaymentsConfiguration dynamicPaymentsConfiguration;
 
   @Mock
   private VersionedProfileV1 profile;
@@ -179,7 +175,6 @@ public class ProfileGrpcServiceTest extends SimpleBaseGrpcTest<ProfileGrpcServic
     when(rateLimiters.getProfileLimiter()).thenReturn(rateLimiter);
 
     when(dynamicConfigurationManager.getConfiguration()).thenReturn(dynamicConfiguration);
-    when(dynamicConfiguration.getPaymentsConfiguration()).thenReturn(dynamicPaymentsConfiguration);
 
     when(account.getUuid()).thenReturn(AUTHENTICATED_ACI);
     when(account.getIdentifier(org.whispersystems.textsecuregcm.identity.IdentityType.ACI)).thenReturn(AUTHENTICATED_ACI);
@@ -194,10 +189,6 @@ public class ProfileGrpcServiceTest extends SimpleBaseGrpcTest<ProfileGrpcServic
     when(accountsManager.getByServiceIdentifier(new AciServiceIdentifier(AUTHENTICATED_ACI))).thenReturn(Optional.of(account));
 
     when(profilesManager.getV1(any(), any())).thenReturn(Optional.of(profile));
-
-    when(dynamicConfigurationManager.getConfiguration()).thenReturn(dynamicConfiguration);
-    when(dynamicConfiguration.getPaymentsConfiguration()).thenReturn(dynamicPaymentsConfiguration);
-    when(dynamicPaymentsConfiguration.getDisallowedPrefixes()).thenReturn(Collections.emptyList());
 
     when(profilesManager.deleteAvatar(anyString())).thenReturn(CompletableFuture.completedFuture(null));
 
@@ -400,40 +391,6 @@ public class ProfileGrpcServiceTest extends SimpleBaseGrpcTest<ProfileGrpcServic
             .clearCommitment()
             .build(), "commitment", false)
     );
-  }
-
-  @ParameterizedTest
-  @ValueSource(booleans = {true, false})
-  void setPaymentAddressDisallowedCountry(final boolean hasExistingPaymentAddress) throws InvalidInputException {
-    final Phonenumber.PhoneNumber disallowedPhoneNumber = PhoneNumberUtil.getInstance().getExampleNumber("CU");
-    final byte[] commitment = new ProfileKey(new byte[32]).getCommitment(new ServiceId.Aci(AUTHENTICATED_ACI)).serialize();
-
-    final byte[] validPaymentAddress = new byte[582];
-    if (hasExistingPaymentAddress) {
-      when(profile.paymentAddress()).thenReturn(validPaymentAddress);
-    }
-
-    final SetProfileRequest request = SetProfileRequest.newBuilder()
-        .setVersion(ByteString.copyFrom(VERSION))
-        .setData(ByteString.copyFrom(VALID_DATA))
-        .setPaymentAddress(ByteString.copyFrom(validPaymentAddress))
-        .setCommitment(ByteString.copyFrom(commitment))
-        .setV1Request(V1_REQUEST)
-        .build();
-    final String disallowedCountryCode = String.format("+%d", disallowedPhoneNumber.getCountryCode());
-    when(dynamicPaymentsConfiguration.getDisallowedPrefixes()).thenReturn(List.of(disallowedCountryCode));
-    when(account.getNumber()).thenReturn(PhoneNumberUtil.getInstance().format(
-        disallowedPhoneNumber,
-        PhoneNumberUtil.PhoneNumberFormat.E164));
-    when(profilesManager.getV1(any(), anyString())).thenReturn(Optional.of(profile));
-
-    final SetProfileResponse response = authenticatedServiceStub().setProfile(request);
-
-    if (hasExistingPaymentAddress) {
-      assertTrue(response.hasResult(), "Payment address changes in disallowed countries should still be allowed if the account already has a valid payment address");
-    } else {
-      assertTrue(response.hasPaymentsForbiddenInRegion());
-    }
   }
 
   @Test

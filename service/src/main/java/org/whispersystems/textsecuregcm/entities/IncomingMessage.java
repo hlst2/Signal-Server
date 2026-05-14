@@ -4,9 +4,7 @@
  */
 package org.whispersystems.textsecuregcm.entities;
 
-import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.google.protobuf.ByteString;
-import com.webauthn4j.converter.jackson.deserializer.json.ByteArrayBase64Deserializer;
 import io.micrometer.core.instrument.Metrics;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.AssertTrue;
@@ -24,7 +22,6 @@ public record IncomingMessage(int type,
                               byte destinationDeviceId,
                               int destinationRegistrationId,
 
-                              @JsonDeserialize(using = ByteArrayBase64Deserializer.class)
                               @NotNull
                               // Note that max size is validated elsewhere in the interest of controlling responses and
                               // reporting additional metrics.

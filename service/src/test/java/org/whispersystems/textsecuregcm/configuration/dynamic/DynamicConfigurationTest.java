@@ -246,31 +246,6 @@ class DynamicConfigurationTest {
   }
 
   @Test
-  void testParsePaymentsConfiguration() throws JsonProcessingException {
-    {
-      final String emptyConfigYaml = REQUIRED_CONFIG.concat("test: true");
-      final DynamicConfiguration emptyConfig =
-          DynamicConfigurationManager.parseConfiguration(emptyConfigYaml, DynamicConfiguration.class).orElseThrow();
-
-      assertTrue(emptyConfig.getPaymentsConfiguration().getDisallowedPrefixes().isEmpty());
-    }
-
-    {
-      final String paymentsConfigYaml = REQUIRED_CONFIG.concat("""
-          payments:
-            disallowedPrefixes:
-              - +44
-          """);
-
-      final DynamicPaymentsConfiguration config =
-          DynamicConfigurationManager.parseConfiguration(paymentsConfigYaml, DynamicConfiguration.class).orElseThrow()
-              .getPaymentsConfiguration();
-
-      assertEquals(List.of("+44"), config.getDisallowedPrefixes());
-    }
-  }
-
-  @Test
   void testParseCaptchaConfiguration() throws JsonProcessingException {
     {
       final String emptyConfigYaml = "test: true";

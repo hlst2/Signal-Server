@@ -81,7 +81,6 @@ import org.whispersystems.textsecuregcm.auth.UnidentifiedAccessUtil;
 import org.whispersystems.textsecuregcm.configuration.BadgeConfiguration;
 import org.whispersystems.textsecuregcm.configuration.BadgesConfiguration;
 import org.whispersystems.textsecuregcm.configuration.dynamic.DynamicConfiguration;
-import org.whispersystems.textsecuregcm.configuration.dynamic.DynamicPaymentsConfiguration;
 import org.whispersystems.textsecuregcm.entities.Badge;
 import org.whispersystems.textsecuregcm.entities.BadgeSvg;
 import org.whispersystems.textsecuregcm.entities.BaseProfileResponse;
@@ -143,7 +142,6 @@ class ProfileControllerTest {
   private static final DynamicConfigurationManager<DynamicConfiguration> dynamicConfigurationManager = mock(
       DynamicConfigurationManager.class);
 
-  private DynamicPaymentsConfiguration dynamicPaymentsConfiguration;
   private Account profileAccount;
   private Account capabilitiesAccount;
 
@@ -182,12 +180,9 @@ class ProfileControllerTest {
     clock.pin(Instant.ofEpochSecond(42));
     AccountsHelper.setupMockUpdate(accountsManager);
 
-    dynamicPaymentsConfiguration = mock(DynamicPaymentsConfiguration.class);
     final DynamicConfiguration dynamicConfiguration = mock(DynamicConfiguration.class);
 
     when(dynamicConfigurationManager.getConfiguration()).thenReturn(dynamicConfiguration);
-    when(dynamicConfiguration.getPaymentsConfiguration()).thenReturn(dynamicPaymentsConfiguration);
-    when(dynamicPaymentsConfiguration.getDisallowedPrefixes()).thenReturn(Collections.emptyList());
 
     when(rateLimiters.getProfileLimiter()).thenReturn(rateLimiter);
     when(rateLimiters.getUsernameLookupLimiter()).thenReturn(usernameRateLimiter);
@@ -786,93 +781,6 @@ class ProfileControllerTest {
       assertThat(profile.aboutEmoji()).isNull();
       assertThat(profile.about()).isNull();
       assertThat(profile.paymentAddress()).isEqualTo(paymentAddress);
-    }
-  }
-
-  @Test
-  void testSetProfilePaymentAddressCountryNotAllowed() throws InvalidInputException {
-    when(dynamicPaymentsConfiguration.getDisallowedPrefixes())
-        .thenReturn(List.of(AuthHelper.VALID_NUMBER_TWO.substring(0, 3)));
-
-    final ProfileKeyCommitment commitment = new ProfileKey(new byte[32]).getCommitment(new ServiceId.Aci(AuthHelper.VALID_UUID));
-
-    clearInvocations(AuthHelper.VALID_ACCOUNT_TWO);
-
-    final byte[] name = TestRandomUtil.nextBytes(81);
-    final byte[] paymentAddress = TestRandomUtil.nextBytes(582);
-
-    try (final Response response = resources.getJerseyTest()
-        .target("/v1/profile")
-        .request()
-        .header("Authorization", AuthHelper.getAuthHeader(AuthHelper.VALID_UUID_TWO, AuthHelper.VALID_PASSWORD_TWO))
-        .put(Entity.entity(
-            new CreateProfileRequest(commitment, versionHex("yetanotherversion"), name,
-                null, null, paymentAddress, false, false,
-                Optional.of(List.of()), null), MediaType.APPLICATION_JSON_TYPE))) {
-
-      assertThat(response.getStatus()).isEqualTo(403);
-      assertThat(response.hasEntity()).isFalse();
-
-      verify(profilesManager, never()).setV1(any(), any());
-    }
-  }
-
-  @ParameterizedTest
-  @ValueSource(booleans = {true, false})
-  void testSetProfilePaymentAddressCountryNotAllowedExistingPaymentAddress(
-      final boolean existingPaymentAddressOnProfile) throws InvalidInputException {
-    when(dynamicPaymentsConfiguration.getDisallowedPrefixes())
-        .thenReturn(List.of(AuthHelper.VALID_NUMBER_TWO.substring(0, 3)));
-
-    final ProfileKeyCommitment commitment = new ProfileKey(new byte[32]).getCommitment(new ServiceId.Aci(AuthHelper.VALID_UUID));
-    final byte[] name = TestRandomUtil.nextBytes(81);
-    final byte[] paymentAddress = TestRandomUtil.nextBytes(582);
-    final byte[] phoneNumberSharing = TestRandomUtil.nextBytes(29);
-
-    clearInvocations(AuthHelper.VALID_ACCOUNT_TWO);
-
-    when(profilesManager.getV1(eq(AuthHelper.VALID_UUID_TWO), any()))
-        .thenReturn(Optional.of(
-            new VersionedProfileV1("1", name, null, null, null,
-                existingPaymentAddressOnProfile ? TestRandomUtil.nextBytes(582) : null,
-                phoneNumberSharing,
-                commitment.serialize())));
-
-    final String version = versionHex("yetanotherversion");
-    try (final Response response = resources.getJerseyTest()
-        .target("/v1/profile")
-        .request()
-        .header("Authorization", AuthHelper.getAuthHeader(AuthHelper.VALID_UUID_TWO, AuthHelper.VALID_PASSWORD_TWO))
-        .put(Entity.entity(
-            new CreateProfileRequest(commitment, version, name,
-                null, null, paymentAddress, false, false,
-                Optional.of(List.of()), null), MediaType.APPLICATION_JSON_TYPE))) {
-
-      if (existingPaymentAddressOnProfile) {
-        assertThat(response.getStatus()).isEqualTo(200);
-        assertThat(response.hasEntity()).isFalse();
-
-        final ArgumentCaptor<VersionedProfileV1> profileArgumentCaptor = ArgumentCaptor.forClass(VersionedProfileV1.class);
-
-        verify(profilesManager).getV1(eq(AuthHelper.VALID_UUID_TWO), eq(version));
-        verify(profilesManager).setV1(eq(AuthHelper.VALID_UUID_TWO), profileArgumentCaptor.capture());
-
-        verifyNoMoreInteractions(profilesManager);
-
-        final VersionedProfileV1 profile = profileArgumentCaptor.getValue();
-        assertThat(profile.commitment()).isEqualTo(commitment.serialize());
-        assertThat(profile.avatar()).isNull();
-        assertThat(profile.version()).isEqualTo(version);
-        assertThat(profile.name()).isEqualTo(name);
-        assertThat(profile.aboutEmoji()).isNull();
-        assertThat(profile.about()).isNull();
-        assertThat(profile.paymentAddress()).isEqualTo(paymentAddress);
-      } else {
-        assertThat(response.getStatus()).isEqualTo(403);
-        assertThat(response.hasEntity()).isFalse();
-
-        verify(profilesManager, never()).setV1(any(), any());
-      }
     }
   }
 

@@ -54,7 +54,6 @@ import org.whispersystems.textsecuregcm.storage.Accounts;
 import org.whispersystems.textsecuregcm.storage.AccountsManager;
 import org.whispersystems.textsecuregcm.storage.DynamicConfigurationManager;
 import org.whispersystems.textsecuregcm.storage.DynamoDbRecoveryManager;
-import org.whispersystems.textsecuregcm.storage.IssuedReceiptsManager;
 import org.whispersystems.textsecuregcm.storage.KeysManager;
 import org.whispersystems.textsecuregcm.storage.MessagesCache;
 import org.whispersystems.textsecuregcm.storage.MessagesDynamoDb;
@@ -71,11 +70,6 @@ import org.whispersystems.textsecuregcm.storage.RepeatedUseKEMSignedPreKeyStore;
 import org.whispersystems.textsecuregcm.storage.ReportMessageDynamoDb;
 import org.whispersystems.textsecuregcm.storage.ReportMessageManager;
 import org.whispersystems.textsecuregcm.storage.SingleUseECPreKeyStore;
-import org.whispersystems.textsecuregcm.storage.SubscriptionManager;
-import org.whispersystems.textsecuregcm.storage.Subscriptions;
-import org.whispersystems.textsecuregcm.subscriptions.AppleAppStoreClient;
-import org.whispersystems.textsecuregcm.subscriptions.AppleAppStoreManager;
-import org.whispersystems.textsecuregcm.subscriptions.GooglePlayBillingManager;
 import org.whispersystems.textsecuregcm.util.ManagedAwsCrt;
 import org.whispersystems.textsecuregcm.util.ManagedExecutors;
 import reactor.core.scheduler.Scheduler;
@@ -105,10 +99,6 @@ public record CommandDependencies(
     FaultTolerantRedisClusterClient pushSchedulerCluster,
     ClientResources.Builder redisClusterClientResourcesBuilder,
     BackupManager backupManager,
-    IssuedReceiptsManager issuedReceiptsManager,
-    GooglePlayBillingManager googlePlayBillingManager,
-    AppleAppStoreManager appleAppStoreManager,
-    SubscriptionManager subscriptionManager,
     DynamicConfigurationManager<DynamicConfiguration> dynamicConfigurationManager,
     DynamoDbAsyncClient dynamoDbAsyncClient,
     PhoneNumberIdentifiers phoneNumberIdentifiers,
@@ -311,38 +301,6 @@ public record CommandDependencies(
         clock,
         dynamicConfigurationManager);
 
-    final IssuedReceiptsManager issuedReceiptsManager = new IssuedReceiptsManager(
-        configuration.getDynamoDbTables().getIssuedReceipts().getTableName(),
-        configuration.getDynamoDbTables().getIssuedReceipts().getExpiration(),
-        dynamoDbAsyncClient,
-        configuration.getDynamoDbTables().getIssuedReceipts().getGenerator(),
-        configuration.getDynamoDbTables().getIssuedReceipts().getmaxIssuedReceiptsPerPaymentId());
-
-    final ServerSecretParams zkSecretParams = new ServerSecretParams(configuration.getZkConfig().serverSecret().value());
-    final ServerZkReceiptOperations zkReceiptOperations = new ServerZkReceiptOperations(zkSecretParams);
-    GooglePlayBillingManager googlePlayBillingManager = new GooglePlayBillingManager(
-        new ByteArrayInputStream(configuration.getGooglePlayBilling().credentialsJson().getBytes(StandardCharsets.UTF_8)),
-        configuration.getGooglePlayBilling().packageName(),
-        configuration.getGooglePlayBilling().applicationName(),
-        configuration.getGooglePlayBilling().productIdToLevel());
-    AppleAppStoreManager appleAppStoreManager = new AppleAppStoreManager(
-        new AppleAppStoreClient(
-            configuration.getAppleAppStore().env(),
-            configuration.getAppleAppStore().bundleId(),
-            configuration.getAppleAppStore().appAppleId(),
-            configuration.getAppleAppStore().issuerId(),
-            configuration.getAppleAppStore().keyId(),
-            configuration.getAppleAppStore().encodedKey().value(),
-            configuration.getAppleAppStore().appleRootCerts(),
-            configuration.getAppleAppStore().retryConfigurationName()),
-        configuration.getAppleAppStore().subscriptionGroupId(),
-        configuration.getAppleAppStore().productIdToLevel());
-    final SubscriptionManager subscriptionManager = new SubscriptionManager(
-        new Subscriptions(configuration.getDynamoDbTables().getSubscriptions().getTableName(), dynamoDbAsyncClient),
-        List.of(googlePlayBillingManager, appleAppStoreManager),
-        zkReceiptOperations,
-        issuedReceiptsManager);
-
     APNSender apnSender = new APNSender(apnSenderExecutor, configuration.getApnConfiguration());
     FcmSender fcmSender = new FcmSender(fcmSenderExecutor, configuration.getFcmConfiguration().credentials().value());
     PushNotificationScheduler pushNotificationScheduler = new PushNotificationScheduler(pushSchedulerCluster,
@@ -378,10 +336,6 @@ public record CommandDependencies(
         pushSchedulerCluster,
         redisClientResourcesBuilder,
         backupManager,
-        issuedReceiptsManager,
-        googlePlayBillingManager,
-        appleAppStoreManager,
-        subscriptionManager,
         dynamicConfigurationManager,
         dynamoDbAsyncClient,
         phoneNumberIdentifiers,

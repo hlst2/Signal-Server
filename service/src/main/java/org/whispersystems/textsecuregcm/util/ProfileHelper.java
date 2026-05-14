@@ -108,13 +108,7 @@ public class ProfileHelper {
       final Optional<VersionedProfileV1> maybeV1Profile,
       final DynamicConfigurationManager<DynamicConfiguration> dynamicConfigurationManager) {
 
-    final Optional<byte[]> currentPaymentAddress = maybeProfile.map(VersionedProfile::paymentAddress)
-        .or(() -> maybeV1Profile.map(VersionedProfileV1::paymentAddress));
-    final boolean hasDisallowedPrefix = dynamicConfigurationManager.getConfiguration().getPaymentsConfiguration()
-        .getDisallowedPrefixes().stream()
-        .anyMatch(prefix -> account.getNumber().startsWith(prefix));
-
-    return hasDisallowedPrefix && currentPaymentAddress.isEmpty();
+    return false;
   }
 
   @Nullable
