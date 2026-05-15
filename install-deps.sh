@@ -144,6 +144,32 @@ install_temurin_jdk() {
   java -version
 }
 
+# Resolve JAVA_HOME from the `java` binary on PATH and persist it system-wide
+# via /etc/profile.d. Also exports it for the rest of this script so the Maven
+# warm and the run-local.sh wrapper can pass it through to mvnw.
+detect_java_home() {
+  local java_bin
+  java_bin="$(readlink -f "$(command -v java)" 2>/dev/null || true)"
+  if [[ -z "$java_bin" || ! -x "$java_bin" || "$java_bin" != */bin/java ]]; then
+    warn "Could not locate 'java' to set JAVA_HOME; downstream mvnw runs will warn."
+    return
+  fi
+  JAVA_HOME="${java_bin%/bin/java}"
+  export JAVA_HOME
+
+  local profile="/etc/profile.d/temurin-java.sh"
+  if [[ ! -r "$profile" ]] || ! grep -qx "export JAVA_HOME=$JAVA_HOME" "$profile"; then
+    cat > "$profile" <<EOF
+# Written by Signal-Server install-deps.sh — points at the Adoptium Temurin JDK $JDK_MAJOR install.
+export JAVA_HOME=$JAVA_HOME
+EOF
+    chmod 0644 "$profile"
+    log "Set JAVA_HOME=$JAVA_HOME (persisted in $profile)."
+  else
+    log "JAVA_HOME=$JAVA_HOME already persisted in $profile."
+  fi
+}
+
 # ---------- 3. Docker ------------------------------------------------------------
 install_docker() {
   if command -v docker >/dev/null 2>&1 && docker compose version >/dev/null 2>&1; then
@@ -287,17 +313,23 @@ warm_maven_cache() {
 
   log "Warming Maven local repository (~/.m2/repository); this can take several minutes..."
 
+  # JAVA_HOME silences mvnw's "JAVA_HOME not set" warning; --enable-native-access
+  # silences the JDK 25 restricted-method warning that jansi triggers.
+  local env_prefix=""
+  [[ -n "${JAVA_HOME:-}" ]] && env_prefix+="JAVA_HOME='${JAVA_HOME}' "
+  env_prefix+="MAVEN_OPTS='--enable-native-access=ALL-UNNAMED' "
+
   # dependency:go-offline fetches direct + transitive deps. It tends to miss some
   # plugin-execution-time deps, so we follow up with a real test-compile which
   # exercises every plugin we actually use at build time.
-  if ! as_user bash -c "cd '$REPO_ROOT' && ./mvnw -B -q $profiles dependency:go-offline -DskipTests=true"; then
+  if ! as_user bash -c "cd '$REPO_ROOT' && ${env_prefix}./mvnw -B -q $profiles dependency:go-offline -DskipTests=true"; then
     warn "dependency:go-offline reported errors (often non-fatal); continuing with test-compile."
   fi
 
   # test-compile pulls in the test classpath including testcontainers libs that
   # run-local.sh will need. We DO NOT run unit tests here — that would spin up
   # all the testcontainers images and take ~20 min.
-  if ! as_user bash -c "cd '$REPO_ROOT' && ./mvnw -B $profiles clean test-compile -DskipTests=true"; then
+  if ! as_user bash -c "cd '$REPO_ROOT' && ${env_prefix}./mvnw -B $profiles clean test-compile -DskipTests=true"; then
     err "Maven test-compile failed — the build is broken; re-run install-deps.sh after fixing."
   fi
 
@@ -380,6 +412,11 @@ if ! docker info >/dev/null 2>&1; then
   echo "user picks up the docker group membership (or run: newgrp docker)." >&2
   exit 1
 fi
+
+# Silence mvnw warnings: JAVA_HOME unset, and JDK 25's restricted-method warning
+# that jansi (Maven's terminal color lib) trips. Both are cosmetic but noisy.
+export JAVA_HOME="\${JAVA_HOME:-${JAVA_HOME:-}}"
+export MAVEN_OPTS="\${MAVEN_OPTS:---enable-native-access=ALL-UNNAMED}"
 
 # Prevent the AWS / Google SDKs from probing 169.254.169.254 (EC2 IMDS) and
 # metadata.google.internal looking for credentials. Without these, startup can
@@ -472,6 +509,7 @@ main() {
   check_arch
   install_base_packages
   install_temurin_jdk
+  detect_java_home
   install_docker
   add_user_to_docker_group
   install_foundationdb_client
