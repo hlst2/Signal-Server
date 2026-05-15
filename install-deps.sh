@@ -326,11 +326,19 @@ warm_maven_cache() {
     warn "dependency:go-offline reported errors (often non-fatal); continuing with test-compile."
   fi
 
-  # test-compile pulls in the test classpath including testcontainers libs that
-  # run-local.sh will need. We DO NOT run unit tests here — that would spin up
-  # all the testcontainers images and take ~20 min.
-  if ! as_user bash -c "cd '$REPO_ROOT' && ${env_prefix}./mvnw -B $profiles clean test-compile -DskipTests=true"; then
-    err "Maven test-compile failed — the build is broken; re-run install-deps.sh after fixing."
+  # Run all the way through `prepare-package` (with -DskipTests so we skip the
+  # actual test execution). This achieves two things in one online pass:
+  #   1. Compiles main + test sources, populating ~/.m2 with every plugin and
+  #      dependency the offline run-local.sh will need.
+  #   2. Fires the download-maven-plugin "install-foundationdb-client-library"
+  #      execution that's bound to prepare-package in the exclude-spam-filter
+  #      profile, populating its persistent cache at
+  #      ~/.m2/repository/.cache/download-maven-plugin/. Without this, offline
+  #      run-local.sh fails with "No file in cache and maven is in offline mode"
+  #      when it reaches that phase. mvn clean doesn't touch this cache, so a
+  #      single online warm is enough for all subsequent offline runs.
+  if ! as_user bash -c "cd '$REPO_ROOT' && ${env_prefix}./mvnw -B $profiles clean prepare-package -DskipTests=true"; then
+    err "Maven prepare-package failed — the build is broken; re-run install-deps.sh after fixing."
   fi
 
   log "Maven cache warmed. ~/.m2/repository size: $(as_user du -sh "$(as_user bash -c 'echo $HOME')/.m2/repository" 2>/dev/null | awk '{print $1}' || echo "?")"
