@@ -38,6 +38,9 @@ public class StaticS3ObjectMonitorFactory implements S3ObjectMonitorFactory {
 
     @Override
     public synchronized void start(final Consumer<InputStream> changeListener) {
+      if (object.isEmpty()) {
+        return;
+      }
       changeListener.accept(new ByteArrayInputStream(object.getBytes()));
     }
   }
