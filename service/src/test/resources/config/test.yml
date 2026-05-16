@@ -55,7 +55,7 @@ dynamoDbTables:
   pushChallenge:
     tableName: push_challenge_test
   pushNotificationExperimentSamples:
-    tableName: Example_PushNotificationExperimentSamples
+    tableName: push_notification_experiment_samples_test
   redeemedReceipts:
     tableName: redeemed_receipts_test
     expiration: P30D # Duration of time until rows expire
@@ -69,8 +69,6 @@ dynamoDbTables:
   scheduledJobs:
     tableName: scheduled_jobs_test
     expiration: P7D
-  clientPublicKeys:
-    tableName: client_public_keys_test
   verificationSessions:
     tableName: verification_sessions_test
 

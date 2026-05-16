@@ -68,13 +68,11 @@ dynamoDbTables:
   scheduledJobs:
     tableName: Example_ScheduledJobs
     expiration: P7D
-  clientPublicKeys:
-    tableName: Example_ClientPublicKeys
   verificationSessions:
     tableName: Example_VerificationSessions
 
 pagedSingleUseKEMPreKeyStore:
-  bucket: preKeyBucket   # S3 Bucket name
+  bucket: prekey-bucket  # S3 Bucket name (must be lowercase per S3 naming rules)
   s3Client:
     region: us-west-2    # AWS region
 
