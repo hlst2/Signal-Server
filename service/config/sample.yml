@@ -74,8 +74,9 @@ dynamoDbTables:
     tableName: Example_VerificationSessions
 
 pagedSingleUseKEMPreKeyStore:
-  bucket: preKeyBucket # S3 Bucket name
-  region: us-west-2    # AWS region
+  bucket: preKeyBucket   # S3 Bucket name
+  s3Client:
+    region: us-west-2    # AWS region
 
 cacheCluster: # Redis server configuration for cache cluster
   configurationUri: redis://redis.example.com:6379/

@@ -6,11 +6,9 @@
 package org.whispersystems.textsecuregcm.configuration;
 
 import jakarta.validation.constraints.NotBlank;
-import javax.annotation.Nullable;
-import java.net.URI;
+import jakarta.validation.constraints.NotNull;
 
 public record PagedSingleUseKEMPreKeyStoreConfiguration(
     @NotBlank String bucket,
-    @NotBlank String region,
-    @Nullable URI endpointOverride) {
+    @NotNull S3AsyncClientFactory s3Client) {
 }

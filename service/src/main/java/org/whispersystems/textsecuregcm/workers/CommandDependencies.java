@@ -211,10 +211,8 @@ public record CommandDependencies(
         configuration.getDynamoDbTables().getProfilesV1().getTableName());
     ProfilesV2 profiles = new ProfilesV2(dynamoDbClient, dynamoDbAsyncClient,
         configuration.getDynamoDbTables().getProfilesV2().getTableName());
-    S3AsyncClient asyncKeysS3Client = S3AsyncClient.builder()
-        .credentialsProvider(awsCredentialsProvider)
-        .region(Region.of(configuration.getPagedSingleUseKEMPreKeyStore().region()))
-        .build();
+    S3AsyncClient asyncKeysS3Client = configuration.getPagedSingleUseKEMPreKeyStore().s3Client()
+        .buildAsyncClient(awsCredentialsProvider, configuration.getPagedSingleUseKEMPreKeyStore().bucket());
     PagedSingleUseKEMPreKeyStore pagedSingleUseKEMPreKeyStore = new PagedSingleUseKEMPreKeyStore(
         dynamoDbAsyncClient, asyncKeysS3Client,
         configuration.getDynamoDbTables().getPagedKemKeys().getTableName(),

@@ -63,7 +63,7 @@ dynamoDbTables:
     tableName: registration_recovery_passwords_test
     expiration: P300D # Duration of time until rows expire
   remoteConfig:
-    tableName: remote_config_test
+    tableName: remote_configs_test
   reportMessage:
     tableName: report_messages_test
   scheduledJobs:
@@ -75,8 +75,9 @@ dynamoDbTables:
     tableName: verification_sessions_test
 
 pagedSingleUseKEMPreKeyStore:
-  bucket: preKeyBucket # S3 Bucket name
-  region: us-west-2    # AWS region
+  bucket: prekey-bucket
+  s3Client:
+    type: local
 
 cacheCluster: # Redis server configuration for cache cluster
   type: local

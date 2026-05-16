@@ -5,4 +5,5 @@ org.whispersystems.textsecuregcm.configuration.FaultTolerantRedisClientFactory
 org.whispersystems.textsecuregcm.configuration.PaymentsServiceClientsFactory
 org.whispersystems.textsecuregcm.configuration.PubSubPublisherFactory
 org.whispersystems.textsecuregcm.configuration.RegistrationServiceClientFactory
+org.whispersystems.textsecuregcm.configuration.S3AsyncClientFactory
 org.whispersystems.textsecuregcm.configuration.S3ObjectMonitorFactory

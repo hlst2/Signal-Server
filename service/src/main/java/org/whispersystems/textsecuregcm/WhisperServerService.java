@@ -448,11 +448,8 @@ public class WhisperServerService extends Application<WhisperServerConfiguration
         config.getDynamoDbTables().getProfilesV1().getTableName());
     ProfilesV2 profiles = new ProfilesV2(dynamoDbClient, dynamoDbAsyncClient, config.getDynamoDbTables().getProfilesV2().getTableName());
 
-    S3AsyncClient asyncKeysS3Client = S3AsyncClient.builder()
-        .credentialsProvider(awsCredentialsProvider)
-        .region(Region.of(config.getPagedSingleUseKEMPreKeyStore().region()))
-        .endpointOverride(config.getPagedSingleUseKEMPreKeyStore().endpointOverride())
-        .build();
+    S3AsyncClient asyncKeysS3Client = config.getPagedSingleUseKEMPreKeyStore().s3Client()
+        .buildAsyncClient(awsCredentialsProvider, config.getPagedSingleUseKEMPreKeyStore().bucket());
     KeysManager keysManager = new KeysManager(
         new SingleUseECPreKeyStore(dynamoDbAsyncClient, config.getDynamoDbTables().getEcKeys().getTableName()),
         new PagedSingleUseKEMPreKeyStore(
