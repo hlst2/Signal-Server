@@ -30,9 +30,16 @@ import org.whispersystems.textsecuregcm.util.HttpUtils;
  */
 public class SecureStorageClient {
 
+  private static final org.slf4j.Logger logger = org.slf4j.LoggerFactory.getLogger(SecureStorageClient.class);
+
   private final ExternalServiceCredentialsGenerator storageServiceCredentialsGenerator;
   private final URI deleteUri;
   private final FaultTolerantHttpClient httpClient;
+  // server-private fork: true when secureStorageService.uri is not a real http(s):// endpoint, i.e.
+  // this deployment is not running the auxiliary SVR-side secure-storage-service. All operations
+  // short-circuit so AccountsManager.delete() (and any other caller) succeeds without trying to
+  // POST/DELETE against a schemeless URI.
+  private final boolean disabled;
 
   @VisibleForTesting
   static final String DELETE_PATH = "/v1/storage";
@@ -42,7 +49,13 @@ public class SecureStorageClient {
   ScheduledExecutorService retryExecutor, final SecureStorageServiceConfiguration configuration)
       throws CertificateException {
     this.storageServiceCredentialsGenerator = storageServiceCredentialsGenerator;
-    this.deleteUri = URI.create(configuration.uri()).resolve(DELETE_PATH);
+    final URI resolved = URI.create(configuration.uri()).resolve(DELETE_PATH);
+    this.disabled = resolved.getScheme() == null;
+    this.deleteUri = resolved;
+    if (disabled) {
+      logger.warn("SecureStorageClient disabled: secureStorageService.uri='{}' resolves to a URI without a scheme; "
+          + "delete-account and related flows will skip the secure-storage-service call.", configuration.uri());
+    }
     this.httpClient = FaultTolerantHttpClient.newBuilder("secure-storage", executor)
         .withCircuitBreaker(configuration.circuitBreakerConfigurationName())
         .withRetry(configuration.retryConfigurationName(), retryExecutor)
@@ -55,6 +68,10 @@ public class SecureStorageClient {
   }
 
   public CompletableFuture<Void> deleteStoredData(final UUID accountUuid) {
+    if (disabled) {
+      // No secure-storage-service is running on this deployment; nothing to wipe.
+      return CompletableFuture.completedFuture(null);
+    }
     final ExternalServiceCredentials credentials = storageServiceCredentialsGenerator.generateForUuid(accountUuid);
 
     final HttpRequest request = HttpRequest.newBuilder()

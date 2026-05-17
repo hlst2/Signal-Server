@@ -40,6 +40,11 @@ public class SecureValueRecoveryClient {
   private final URI deleteUri;
   private final Supplier<List<Integer>> allowedDeletionErrorStatusCodes;
   private final FaultTolerantHttpClient httpClient;
+  // server-private fork: true when secureValueRecovery2/3.uri does not resolve to a real http(s)
+  // endpoint. A self-hosted deployment without an SVR2/SVR3 enclave deployed has no service to
+  // call here, so removeData() short-circuits to keep AccountsManager.delete() from 500ing on a
+  // schemeless URI.
+  private final boolean disabled;
 
   @VisibleForTesting
   static final String DELETE_PATH = "/v1/delete";
@@ -51,7 +56,13 @@ public class SecureValueRecoveryClient {
       Supplier<List<Integer>> allowedDeletionErrorStatusCodes)
       throws CertificateException {
     this.secureValueRecoveryCredentialsGenerator = secureValueRecoveryCredentialsGenerator;
-    this.deleteUri = URI.create(configuration.uri()).resolve(DELETE_PATH);
+    final URI resolved = URI.create(configuration.uri()).resolve(DELETE_PATH);
+    this.disabled = resolved.getScheme() == null;
+    this.deleteUri = resolved;
+    if (disabled) {
+      logger.warn("SecureValueRecoveryClient disabled: configured uri='{}' resolves to a URI without a scheme; "
+          + "removeData() will skip the SVR delete call.", configuration.uri());
+    }
     this.allowedDeletionErrorStatusCodes = allowedDeletionErrorStatusCodes;
     this.httpClient = FaultTolerantHttpClient.newBuilder("secure-value-recovery", executor)
         .withCircuitBreaker(configuration.circuitBreakerConfigurationName())
@@ -69,6 +80,10 @@ public class SecureValueRecoveryClient {
   }
 
   public CompletableFuture<Void> removeData(final String userIdentifier) {
+    if (disabled) {
+      // No SVR enclave is deployed for this configuration; nothing to wipe.
+      return CompletableFuture.completedFuture(null);
+    }
 
     final ExternalServiceCredentials credentials = secureValueRecoveryCredentialsGenerator.generateFor(userIdentifier);
 
