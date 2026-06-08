@@ -158,8 +158,8 @@ messageCache: # Redis server configuration for message store cache
     type: local
 
 attachments:
-  maxAttachmentUploadSizeInBytes: 1024
-  maxMessageBackupUploadSizeInBytes: 1024
+  maxAttachmentUploadSizeInBytes: 209715200
+  maxMessageBackupUploadSizeInBytes: 209715200
 
 gcpAttachments: # GCP Storage configuration
   domain: example.com
@@ -168,7 +168,7 @@ gcpAttachments: # GCP Storage configuration
   rsaSigningKey: secret://gcpAttachments.rsaSigningKey
 
 tus:
-  uploadUri: https://example.org/upload
+  uploadUri: https://192.168.1.215:8443
   userAuthenticationTokenSharedSecret: secret://tus.userAuthenticationTokenSharedSecret
 
 cdn:

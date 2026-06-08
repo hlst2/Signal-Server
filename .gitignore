@@ -29,3 +29,7 @@ deployer.log
 .classpath
 .settings
 .DS_Store
+private-tls/
+cdn-shim/
+cdn-data/
+server.log

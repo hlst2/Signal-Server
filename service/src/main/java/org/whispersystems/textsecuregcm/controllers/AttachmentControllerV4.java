@@ -112,8 +112,10 @@ public class AttachmentControllerV4 {
     }
 
     final String key = AttachmentUtil.generateAttachmentKey(secureRandom);
-    final boolean useCdn3 = this.experimentEnrollmentManager.isEnrolled(auth.accountIdentifier(), AttachmentUtil.CDN3_EXPERIMENT_NAME);
-    int cdn = useCdn3 ? 3 : 2;
+    // [private-deploy] Always use CDN3 (TUS). The self-hosted CDN is a local TUS-compatible shim; CDN2 (GCS
+    // signed-URL resumable) cannot work against it. Upstream gates this on a 'cdn3' experiment that is not
+    // configured here, which would otherwise default to CDN2 and break link-and-sync uploads.
+    int cdn = 3;
     final AttachmentGenerator.Descriptor descriptor = this.attachmentGenerators.get(cdn).generateAttachment(key, uploadLength);
     return new AttachmentDescriptorV3(cdn, key, descriptor.headers(), descriptor.signedUploadLocation());
   }
